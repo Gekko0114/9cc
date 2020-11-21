@@ -29,6 +29,8 @@ void gen(Node *node) {
             printf(" mov [rax], rdi\n");
             printf(" push rdi\n");
             return;
+        case ND_NULL:
+            return;
         case ND_IF:
         {
             int seq = labelseq++;
@@ -39,16 +41,18 @@ void gen(Node *node) {
               printf(" cmp rax, 0\n");
               printf(" je .L.else.%d\n", seq);
               gen(node->then);
-              printf(" jmp .L.return.main\n");
+              printf(" jmp .L.end.%d\n", seq);
               printf(".L.else.%d:\n", seq);
               gen(node->els);
+              printf(".L.end.%d:\n", seq);
             }
             else {
               gen(node->cond);
               printf(" pop rax\n");
               printf(" cmp rax, 0\n");
-              printf(" jmp .L.return.main\n");
-              gen(node->then);              
+              printf(" jmp .L.end.%d\n", seq);
+              gen(node->then);
+              printf(".L.end.%d:\n", seq);
             }
             return;
         }
@@ -86,6 +90,10 @@ void gen(Node *node) {
           return;
         }
 
+        case ND_BLOCK:
+            for (Node *var = node->body; var; var = var->next)
+              gen(var);
+            return;
         case ND_RETURN:
             gen(node->lhs);
             printf(" pop rax\n");

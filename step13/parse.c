@@ -77,21 +77,19 @@ Node *stmt() {
 
     if (consume("return")) {
         node = new_node(ND_RETURN);
-        node->lhs = expr();        
+        node->lhs = expr();
+        expect(";");
+        return node;
     } else if (consume("if"))
     {
         node = new_node(ND_IF);
         expect("(");
         node->cond = expr();
         expect(")");
-        expect("{");
         node->then = stmt();
-        expect("}");
         if (consume("else"))
         {
-            expect("{");
             node->els = stmt();
-            expect("}");
         }
         return node;
     } else if (consume("while"))
@@ -100,9 +98,8 @@ Node *stmt() {
         expect("(");
         node->cond = expr();
         expect(")");
-        expect("{");
         node->then = stmt();
-        expect("}");
+        return node;
     } else if (consume("for"))
     {
         node = new_node(ND_FOR);
@@ -122,9 +119,24 @@ Node *stmt() {
             node->inc = expr();
             expect(")");
         }
-        expect("{");
         node->then = stmt();
-        expect("}");
+        return node;
+    } else if (consume("{")) {
+        node = new_node(ND_BLOCK);
+        Node head = {};
+        Node *cur = &head;
+        while (!consume("}"))
+        {
+            cur->next = stmt();
+            cur = cur->next;
+        }
+        node->body = head.next;
+        return node;
+    }
+    else if (consume(";"))
+    {
+        node = new_node(ND_NULL);
+        return node;
     }
     else {
         node = expr();
