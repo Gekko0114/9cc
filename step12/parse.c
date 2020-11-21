@@ -94,7 +94,16 @@ Node *stmt() {
             expect("}");
         }
         return node;
-    }    
+    } else if (consume("while"))
+    {
+        node = new_node(ND_WHILE);
+        expect("(");
+        node->cond = expr();
+        expect(")");
+        expect("{");
+        node->then = stmt();
+        expect("}");
+    }
     else {
         node = expr();
     }
