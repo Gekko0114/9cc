@@ -49,11 +49,13 @@ assert 58 'foo = 3 * 20 - (6 / 2); bar = 45 >= 10; foo + bar;'
 assert 5 'foo = 5;return foo;'
 assert 1 'aaa = 1;return aaa;aaa + 1;'
 assert 1 'aaa = 0; return aaa*aaa+1;'
-
+echo if
 assert 1 'if (10 >= 5) { return 1; }'
 assert 1 'if (10 >= 5) { return 1; } else { return 2; }'
 assert 1 'if (10 >= 5) { 1; } else { 2; }'
 assert 2 'foo = 10; if (foo < 5) { bar = 1; } else { bar = 2; } return bar;'
-
+echo While
 assert 10 'count = 0; while (count < 10) { count = count + 1; }; count;'
+echo For
+assert 43 'count = 0; for (i = 0; i < 43; i = i + 1) { count = count + 1; }; count;'
 echo OK
