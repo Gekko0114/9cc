@@ -7,11 +7,9 @@ int main(int argc, char **argv) {
     token = tokenize();
     locals = calloc(1, sizeof(LVar));
     program();
-
     printf(".intel_syntax noprefix\n");
     printf(".global main\n");
     printf("main:\n");
-
     //Prologue
     printf(" push rbp\n");
     printf(" mov rbp, rsp\n");
