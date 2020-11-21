@@ -49,4 +49,9 @@ assert 58 'foo = 3 * 20 - (6 / 2); bar = 45 >= 10; foo + bar;'
 assert 5 'foo = 5;return foo;'
 assert 1 'aaa = 1;return aaa;aaa + 1;'
 assert 1 'aaa = 0; return aaa*aaa+1;'
+
+assert 1 'if (10 >= 5) { return 1; }'
+assert 1 'if (10 >= 5) { return 1; } else { return 2; }'
+assert 1 'if (10 >= 5) { 1; } else { 2; }'
+assert 2 'foo = 10; if (foo < 5) { bar = 1; } else { bar = 2; } return bar;'
 echo OK

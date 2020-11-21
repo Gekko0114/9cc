@@ -9,13 +9,6 @@ bool consume(char *op) {
     return true;
 }
 
-bool consume_return(void) {
-    if (token->kind != TK_RETURN)
-        return false;
-    token = token->next;
-    return true;
-}
-
 Token *consume_ident(void)
 {
     if (token->kind != TK_IDENT)
@@ -82,10 +75,27 @@ void *program() {
 Node *stmt() {
     Node *node;
 
-    if (consume_return()) {
+    if (consume("return")) {
         node = new_node(ND_RETURN);
         node->lhs = expr();        
-    } else {
+    } else if (consume("if"))
+    {
+        node = new_node(ND_IF);
+        expect("(");
+        node->cond = expr();
+        expect(")");
+        expect("{");
+        node->then = stmt();
+        expect("}");
+        if (consume("else"))
+        {
+            expect("{");
+            node->els = stmt();
+            expect("}");
+        }
+        return node;
+    }    
+    else {
         node = expr();
     }
     expect(";");

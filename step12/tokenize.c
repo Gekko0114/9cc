@@ -44,6 +44,17 @@ int is_alnum(char c) {
            (c == '_');
 }
 
+char *starts_with_reserved(char *p) {
+    char *kw[] = {"if", "else", "return"};
+    int kw_size = sizeof(kw) / sizeof(kw[0]);
+    for (size_t i = 0; i < kw_size; i++) {
+        int len = strlen(kw[i]);
+        if (start_with(p, kw[i]) && !is_alnum(p[len]))
+            return kw[i];
+    }
+    return NULL;
+}
+
 Token *tokenize() {
     char *p = user_input;
     Token head;
@@ -56,6 +67,14 @@ Token *tokenize() {
             continue;
         }
 
+        char *kw = starts_with_reserved(p);
+        if (kw) {
+            int len = strlen(kw);
+            cur = new_token(TK_RESERVED, cur, p, len);
+            p += len;
+            continue;
+        }
+
         if (start_with(p, "==") || start_with(p, "!=") ||
             start_with(p, "<=") || start_with(p, ">=")) {
                 cur = new_token(TK_RESERVED, cur, p, 2);
@@ -63,15 +82,9 @@ Token *tokenize() {
                 continue;
             }
 
-        if (strchr("+-*/()<>;=", *p)) {
+        if (strchr("+-*/()<>;={}", *p)) {
             cur = new_token(TK_RESERVED, cur, p++, 1);
             continue;            
-        }
-
-        if (strncmp(p, "return", 6) == 0 && !is_alnum(p[6])) {
-            cur = new_token(TK_RETURN, cur, p, 6);
-            p += 6;
-            continue;
         }
 
         if (is_alpha(*p)) {
