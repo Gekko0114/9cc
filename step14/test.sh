@@ -1,10 +1,16 @@
 #!/bin/bash
+
+cat <<EOF | gcc -xc -c -o tmp2.o -
+int ret3() {return 3;}
+int ret5() {return 5;}
+EOF
+
 assert() {
     expected="$1"
     input="$2"
 
     ./9cc "$input" > tmp.s
-    cc -o tmp tmp.s
+    gcc -static -o tmp tmp.s tmp2.o
     ./tmp
     actual="$?"
 
@@ -15,6 +21,9 @@ assert() {
       exit 1
     fi
 }
+
+assert 3 'return ret3();'
+assert 5 'return ret5();'
 
 assert 0 'return 0;'
 assert 42 'return 42;'
