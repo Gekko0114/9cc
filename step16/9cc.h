@@ -40,6 +40,8 @@ typedef enum {
     ND_SUB,
     ND_MUL,
     ND_DIV,
+    ND_ADDR,
+    ND_DEREF,
     ND_ASSIGN,
     ND_LVAR,    
     ND_NUM,
@@ -96,6 +98,7 @@ bool at_eof(void);
 
 Node *new_node(NodeKind kind, Token *tok);
 Node *new_binary(NodeKind kind, Node *lhs, Node *rhs, Token *tok);
+Node *new_unary(NodeKind kind, Node *lhs, Token *tok);
 Node *new_num(int val, Token *tok);
 
 typedef struct Function Function;

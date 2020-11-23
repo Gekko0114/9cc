@@ -75,4 +75,13 @@ echo While
 assert 10 'main(){count = 0; while (count < 10) { count = count + 1; }; count;}'
 echo For
 assert 43 'main(){count = 0; for (i = 0; i < 43; i = i + 1) { count = count + 1; }; count;}'
+
+echo Pointer
+assert 3 'main() { x = 3; return *&x; }'
+assert 5 'main() { x = 5; y = &x; z = &y; return **z; }'
+assert 7 'main() { x = 4; y = 7; return *(&x + 8); }'
+assert 3 'main() { x=3; y=5; return *(&y-8); }'
+assert 5 'main() { x=3; y=&x; *y=5; return x; }'
+assert 7 'main() { x=3; y=5; *(&x+8)=7; return y; }'
+assert 7 'main() { x=3; y=5; *(&y-8)=7; return x; }'
 echo OK

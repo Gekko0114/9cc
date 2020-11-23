@@ -64,6 +64,13 @@ Node *new_binary(NodeKind kind, Node *lhs, Node *rhs, Token *tok) {
     return node;
 };
 
+Node *new_unary(NodeKind kind, Node *lhs, Token *tok)
+{
+    Node *node = new_node(kind, tok);
+    node->lhs = lhs;
+    return node;
+};
+
 Node *new_num(int val, Token *tok) {
     Node *node = new_node(ND_NUM, tok);
     node->val = val;
@@ -263,11 +270,14 @@ Node *mul() {
 Node *unary() {
     Token *tok;
     if (tok = consume("+"))
-        return primary();
-    else if (consume("-"))
-        return new_binary(ND_SUB, new_num(0, tok), primary(), tok);
-    else
-        return primary();
+        return unary();
+    if (tok = consume("-"))
+        return new_binary(ND_SUB, new_num(0, tok), unary(), tok);
+    if (tok = consume("&"))
+        return new_unary(ND_ADDR, unary(), tok);
+    if (tok = consume("*"))
+        return new_unary(ND_DEREF, unary(), tok);
+    return primary();
 }
 
 Node *func_args() {
