@@ -223,6 +223,21 @@ Node *unary() {
         return primary();
 }
 
+Node *func_args() {
+    if (consume(")"))
+        return NULL;
+
+    Node *head = assign();
+    Node *cur = head;
+    while (consume(","))
+    {
+        cur->next = assign();
+        cur = cur->next;
+    }
+    expect(")");
+    return head;
+}
+
 Node *primary() {
     if (consume("(")) {
         Node *node = expr();
@@ -233,11 +248,11 @@ Node *primary() {
     if (tok) {
         if (consume("("))
         {
-            expect(")");
             Node *node = new_node(ND_FUNCALL);
             node->funcname = calloc(1, sizeof(tok->len));
             strncpy(node->funcname, tok->str, tok->len);
             node->funcname[tok->len] = '\0';
+            node->args = func_args();
             return node;
         }
         Node *node = new_node(ND_LVAR);

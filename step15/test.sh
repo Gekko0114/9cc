@@ -3,6 +3,11 @@
 cat <<EOF | gcc -xc -c -o tmp2.o -
 int ret3() {return 3;}
 int ret5() {return 5;}
+int add(int x, int y) {return x + y; }
+int sub(int x, int y) {return x - y; }
+int add6(int a, int b, int c, int d, int e, int f) {
+  return a + b + c + d + e + f;
+}
 EOF
 
 assert() {
@@ -10,7 +15,7 @@ assert() {
     input="$2"
 
     ./9cc "$input" > tmp.s
-    gcc -static -o tmp tmp.s tmp2.o
+    gcc -o tmp tmp.s tmp2.o
     ./tmp
     actual="$?"
 
@@ -24,6 +29,9 @@ assert() {
 
 assert 3 'return ret3();'
 assert 5 'return ret5();'
+assert 4 'return add(1, 3);'
+assert 6 'return sub(10, 4);'
+assert 21 'return add6(1, 2, 3, 4, 5, 6);'
 
 assert 0 'return 0;'
 assert 42 'return 42;'
