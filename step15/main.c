@@ -5,24 +5,19 @@ int main(int argc, char **argv) {
         error("引数の個数が正しくありません");
     user_input = argv[1];
     token = tokenize();
-    locals = calloc(1, sizeof(LVar));
-    program();
-    printf(".intel_syntax noprefix\n");
-    printf(".global main\n");
-    printf("main:\n");
-    //Prologue
-    printf(" push rbp\n");
-    printf(" mov rbp, rsp\n");
-    printf(" sub rsp, %d\n", locals->offset);
+    Function *prog = program();
 
-    for (size_t i = 0; code[i]; i++) {
-        gen(code[i]);
-    }
+    for (Function *fn = prog; fn; fn = fn->next)
+    {
+        int offset = 0;
+        for (LVar *var = prog->locals; var; var = var->next)
+        {
+            offset += 8;
+            var->offset = offset;            
+        }
+        fn->stack_size = offset;
+    };
 
-    //Epilogue
-    printf(".L.return.main:\n");
-    printf(" mov rsp, rbp\n");
-    printf(" pop rbp\n");
-    printf(" ret\n");
+    codegen(prog);
     return 0;
 }

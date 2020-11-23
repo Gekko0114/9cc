@@ -55,6 +55,14 @@ typedef enum {
     ND_FUNCALL
 } NodeKind;
 
+typedef struct LVar LVar;
+struct LVar {
+    LVar *next;
+    char *name;
+    int len;
+    int offset;
+};
+
 typedef struct Node Node;
 struct Node {
     NodeKind kind;
@@ -74,20 +82,35 @@ struct Node {
     Node *args;
 
     int val;
-    int offset;
+    LVar *var;
 };
 
 bool consume(char *op);
 Token *consume_ident(void);
 void expect(char *op);
 int expect_number(void);
+char *expect_ident(void);
 bool at_eof(void);
 
 Node *new_node(NodeKind kind);
 Node *new_binary(NodeKind kind, Node *lhs, Node *rhs);
 Node *new_num(int val);
 
-Node *code[100];
+typedef struct Function Function;
+
+struct Function
+{
+    Function *next;
+    char *name;
+    Node *node;
+    LVar *locals;
+    int stack_size;
+};
+
+Function *program(void);
+void codegen();
+Function *function(void);
+
 Node *expr();
 Node *equality();
 Node *relational();
@@ -97,15 +120,7 @@ Node *unary();
 Node *primary();
 Node *assign();
 Node *stmt();
-void *program();
 
-typedef struct LVar LVar;
-struct LVar {
-    LVar *next;
-    char *name;
-    int len;
-    int offset;
-};
 LVar *locals;
 LVar *find_lvar(Token *tok);
 

@@ -2,12 +2,13 @@
 
 int labelseq = 1;
 char *argreg[] = {"rdi", "rsi", "rdx", "rcx", "r8", "r9"};
+char *funcname;
 
 void gen_lvar(Node *node) {
     if (node->kind != ND_LVAR)
         error("代入の左辺値が変数ではありません");
     printf(" mov rax, rbp\n");
-    printf(" sub rax, %d\n", node->offset);
+    printf(" sub rax, %d\n", node->var->offset);
     printf(" push rax\n");
     return;
 }
@@ -126,7 +127,7 @@ void gen(Node *node) {
         case ND_RETURN:
             gen(node->lhs);
             printf(" pop rax\n");
-            printf(" jmp .L.return.main\n");
+            printf(" jmp .L.return.%s\n", funcname);
             return;
     }
 
@@ -175,4 +176,30 @@ void gen(Node *node) {
     error("パースできません: node->kind: %d, node->str: %s\n", node->kind, node->val);
   }
   printf("  push rax\n");
+}
+
+void codegen(Function *prog)
+{
+  printf(".intel_syntax noprefix\n");
+  for (Function *fn = prog; fn; fn = fn->next)
+  {
+    printf(".global %s\n", fn->name);
+    printf("%s:\n", fn->name);
+    funcname = fn->name;
+
+    //Prologue
+    printf(" push rbp\n");
+    printf(" mov rbp, rsp\n");
+    printf(" sub rsp, %d\n", fn->stack_size);
+
+    for (Node *node = fn->node; node; node = node->next) {
+      gen(node);
+    }
+
+    //Epilogue
+    printf(".L.return.%s:\n", funcname);
+    printf(" mov rsp, rbp\n");
+    printf(" pop rbp\n");
+    printf(" ret\n");
+  }
 }

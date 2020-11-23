@@ -34,6 +34,17 @@ int expect_number(void) {
     return val;
 }
 
+char *expect_ident(void)
+{
+    if (token->kind != TK_IDENT)
+        error_at(token->str, "識別子ではありません。");
+    char *ident = calloc(1, sizeof(token->len));
+    strncpy(ident, token->str, token->len);
+    ident[token->len] = '\0';
+    token = token->next;
+    return ident;
+}
+
 bool at_eof(void) {
     return token->kind == TK_EOF;
 }
@@ -58,18 +69,44 @@ Node *new_num(int val) {
 };
 
 LVar *find_lvar(Token *tok) {
-    LVar *cur = locals;
     for (LVar *var = locals; var; var = var->next)
         if (var->len == tok->len && !memcmp(tok->str, var->name, var->len))
             return var;
     return NULL;
 }
 
-void *program() {
-    int i = 0;
+Function *program(void)
+{
+    Function head = {};
+    Function *cur = &head;
     while (!at_eof())
-        code[i++] = stmt();
-    code[i] = NULL;
+    {
+        cur->next = function();
+        cur = cur->next;
+    }
+    return head.next;
+}
+
+Function *function(void)
+{
+    locals = NULL;
+    char *name = expect_ident();
+    expect("(");
+    expect(")");
+    expect("{");
+    Node head = {};
+    Node *cur = &head;
+    while (!consume("}"))
+    {
+        cur->next = stmt();
+        cur = cur->next;
+    }
+
+    Function *fn = calloc(1, sizeof(Function));
+    fn->name = name;
+    fn->node = head.next;
+    fn->locals = locals;
+    return fn;
 }
 
 Node *stmt() {
@@ -255,19 +292,17 @@ Node *primary() {
             node->args = func_args();
             return node;
         }
-        Node *node = new_node(ND_LVAR);
         LVar *lvar = find_lvar(tok);
-        if (lvar) {
-            node->offset = lvar->offset;
-        } else {
+        if (!lvar)
+        {
             lvar = calloc(1, sizeof(LVar));
             lvar->next = locals;
             lvar->name = tok->str;
             lvar->len = tok->len;
-            lvar->offset = locals->offset + 8;
-            node->offset = lvar->offset;
             locals = lvar;
         }
+        Node *node = new_node(ND_LVAR);
+        node->var = lvar;
         return node;
     }
     else
