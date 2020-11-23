@@ -27,6 +27,7 @@ struct Token {
 Token *token;
 void error_at(char *loc, char *fmt, ...);
 void error(char *fmt, ...);
+void error_tok(Token *tok, char *fmt, ...);
 Token *new_token(TokenKind kind, Token *cur, char *str, int len);
 bool start_with(char *p, char *q);
 bool is_alpha(char c);
@@ -77,6 +78,7 @@ struct Node {
 
     Node *body;
     Node *next;
+    Token *tok;
 
     char *funcname;
     Node *args;
@@ -85,16 +87,16 @@ struct Node {
     LVar *var;
 };
 
-bool consume(char *op);
+Token *consume(char *op);
 Token *consume_ident(void);
 void expect(char *op);
 int expect_number(void);
 char *expect_ident(void);
 bool at_eof(void);
 
-Node *new_node(NodeKind kind);
-Node *new_binary(NodeKind kind, Node *lhs, Node *rhs);
-Node *new_num(int val);
+Node *new_node(NodeKind kind, Token *tok);
+Node *new_binary(NodeKind kind, Node *lhs, Node *rhs, Token *tok);
+Node *new_num(int val, Token *tok);
 
 typedef struct Function Function;
 
