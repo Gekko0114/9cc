@@ -1,5 +1,14 @@
 #include "9cc.h"
 
+Token *peek(char *op)
+{
+    if (token->kind != TK_RESERVED ||
+        strlen(op) != token->len ||
+        memcmp(token->str, op, token->len))
+        return NULL;
+    return token;
+}
+
 Token *consume(char *op) {
     if (token->kind != TK_RESERVED ||
         strlen(op) != token->len ||
@@ -20,9 +29,7 @@ Token *consume_ident(void)
 }
 
 void expect(char *op) {
-    if (token->kind != TK_RESERVED ||
-        strlen(op) != token->len ||
-        memcmp(token->str, op, token->len))
+    if (!peek(op))
         error_tok(token, "expected \"%s\"", op);
     token = token->next;
 }
@@ -84,15 +91,16 @@ Node *new_node_lvar(LVar *lvar, Token *tok)
     return node;
 }
 
-LVar *new_lvar(char *name)
+LVar *new_lvar(char *name, Type *ty)
 {
-    LVar *var = calloc(1, sizeof(LVar));
-    var->name = name;
+    LVar *lvar = calloc(1, sizeof(LVar));
+    lvar->name = name;
+    lvar->ty = ty;
     LVarList *vl = calloc(1, sizeof(LVarList));
-    vl->var = var;
+    vl->var = lvar;
     vl->next = locals;
     locals = vl;
-    return var;
+    return lvar;
 }
 
 LVar *find_lvar(Token *tok) {
@@ -115,20 +123,35 @@ Function *program(void)
     return head.next;
 }
 
+Type *basetype(void)
+{
+    expect("int");
+    Type *ty = int_type;
+    while (consume("*"))
+        ty = pointer_to(ty);
+    return ty;
+}
+
+LVarList *read_func_param(void)
+{
+    LVarList *vl = calloc(1, sizeof(LVarList));
+    Type *ty = basetype();
+    vl->var = new_lvar(expect_ident(), ty);
+    return vl;
+}
+
 LVarList *read_func_params(void)
 {
     if (consume(")"))
         return NULL;
     
-    LVarList *head = calloc(1, sizeof(LVarList));
-    head->var = new_lvar(expect_ident());
+    LVarList *head = read_func_param();
     LVarList *cur = head;
 
     while (!consume(")"))
     {
         expect(",");
-        cur->next = calloc(1, sizeof(LVarList));
-        cur->next->var = new_lvar(expect_ident());
+        cur->next = read_func_param();
         cur = cur->next;
     }
     return head;
@@ -138,6 +161,7 @@ Function *function(void)
 {
     locals = NULL;
     Function *fn = calloc(1, sizeof(Function));
+    basetype();
     fn->name = expect_ident();
     expect("(");
     fn->params = read_func_params();
@@ -155,6 +179,29 @@ Function *function(void)
     return fn;
 }
 
+Node *declaration(void)
+{
+    Token *tok = token;
+    Type *ty = basetype();
+    LVar *var = new_lvar(expect_ident(), ty);
+
+    if (consume(";"))
+        return new_node(ND_NULL, tok);
+
+    expect("=");
+    Node *lhs = new_node_lvar(var, tok);
+    Node *rhs = expr();
+    expect(";");
+    Node *node = new_binary(ND_ASSIGN, lhs, rhs, tok);
+    return new_unary(ND_EXPR_STMT, node, tok);
+}
+
+Node *read_expr_stmt(void)
+{
+    Token *tok = token;
+    return new_unary(ND_EXPR_STMT, expr(), tok);
+}
+
 Node *stmt(void) {
     Node *node = stmt2();
     add_type(node);
@@ -163,7 +210,6 @@ Node *stmt(void) {
 
 Node *stmt2(void) {
     Node *node;
-
     Token *tok;
     if (tok = consume("return"))
     {
@@ -171,7 +217,8 @@ Node *stmt2(void) {
         node->lhs = expr();
         expect(";");
         return node;
-    } else if (tok = consume("if"))
+    }
+    if (tok = consume("if"))
     {
         node = new_node(ND_IF, tok);
         expect("(");
@@ -179,11 +226,10 @@ Node *stmt2(void) {
         expect(")");
         node->then = stmt();
         if (consume("else"))
-        {
             node->els = stmt();
-        }
         return node;
-    } else if (tok = consume("while"))
+    }
+    if (tok = consume("while"))
     {
         node = new_node(ND_WHILE, tok);
         expect("(");
@@ -191,7 +237,8 @@ Node *stmt2(void) {
         expect(")");
         node->then = stmt();
         return node;
-    } else if (tok = consume("for"))
+    }
+    if (tok = consume("for"))
     {
         node = new_node(ND_FOR, tok);
         expect("(");
@@ -212,7 +259,9 @@ Node *stmt2(void) {
         }
         node->then = stmt();
         return node;
-    } else if (tok = consume("{")) {
+    }
+    if (tok = consume("{"))
+    {
         node = new_node(ND_BLOCK, tok);
         Node head = {};
         Node *cur = &head;
@@ -224,14 +273,9 @@ Node *stmt2(void) {
         node->body = head.next;
         return node;
     }
-    else if (consume(";"))
-    {
-        node = new_node(ND_NULL, tok);
-        return node;
-    }
-    else {
-        node = expr();
-    }
+    if (tok = peek("int"))
+        return declaration();
+    node = read_expr_stmt();
     expect(";");
     return node;
 }
@@ -385,12 +429,7 @@ Node *primary() {
         }
         LVar *lvar = find_lvar(tok);
         if (!lvar)
-        {
-            char *name = calloc(1, sizeof(tok->len));
-            strncpy(name, tok->str, tok->len);
-            name[tok->len] = '\0';
-            lvar = new_lvar(name);
-        }
+            error_tok(tok, "undefined variable");
         return new_node_lvar(lvar, tok);
     }
     else

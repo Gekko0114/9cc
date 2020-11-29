@@ -60,7 +60,8 @@ typedef enum {
     ND_FOR,
     ND_BLOCK,
     ND_NULL,
-    ND_FUNCALL
+    ND_FUNCALL,
+    ND_EXPR_STMT
 } NodeKind;
 
 typedef struct LVar LVar;
@@ -69,6 +70,7 @@ struct LVar {
     char *name;
     int len;
     int offset;
+    Type *ty;
 };
 
 typedef struct LVarList LVarList;
@@ -103,6 +105,7 @@ struct Node {
     LVar *var;
 };
 
+Token *peek(char *op);
 Token *consume(char *op);
 Token *consume_ident(void);
 void expect(char *op);
@@ -115,8 +118,8 @@ Node *new_binary(NodeKind kind, Node *lhs, Node *rhs, Token *tok);
 Node *new_unary(NodeKind kind, Node *lhs, Token *tok);
 Node *new_num(int val, Token *tok);
 Node *new_node_lvar(LVar *lvar, Token *tok);
-LVar *new_lvar(char *name);
-LVar *find_lvar(Token *token);
+LVar *new_lvar(char *name, Type *ty);
+LVar *find_lvar(Token *tok);
 
 typedef struct Function Function;
 
@@ -142,6 +145,7 @@ Node *mul(void);
 Node *unary(void);
 Node *primary(void);
 Node *assign(void);
+Node *declaration(void);
 Node *stmt(void);
 Node *stmt2(void);
 
@@ -160,6 +164,8 @@ struct Type
     TypeKind kind;
     Type *base;
 };
+
+extern Type *int_type;
 
 bool is_integer(Type *ty);
 Type *pointer_to(Type *base);
