@@ -71,7 +71,7 @@ void gen(Node *node) {
               gen(node->cond);
               printf(" pop rax\n");
               printf(" cmp rax, 0\n");
-              printf(" jmp .L.end.%d\n", seq);
+              printf(" je .L.end.%d\n", seq);
               gen(node->then);
               printf(".L.end.%d:\n", seq);
             }
@@ -223,6 +223,10 @@ void codegen(Function *prog)
     printf(" push rbp\n");
     printf(" mov rbp, rsp\n");
     printf(" sub rsp, %d\n", fn->stack_size);
+
+    int i = 0;
+    for (LVarList *vl = fn->params; vl; vl = vl->next)
+      printf(" mov [rbp-%d], %s\n", vl->var->offset, argreg[i++]);
 
     for (Node *node = fn->node; node; node = node->next) {
       gen(node);
