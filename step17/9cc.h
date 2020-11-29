@@ -6,6 +6,8 @@
 #include <stdlib.h>
 #include <string.h>
 
+typedef struct Type Type;
+
 typedef enum {
     TK_RESERVED,
     TK_IDENT,
@@ -37,7 +39,10 @@ Token *tokenize();
 
 typedef enum {
     ND_ADD,
+    ND_PTR_ADD,
     ND_SUB,
+    ND_PTR_SUB,
+    ND_PTR_DIFF,
     ND_MUL,
     ND_DIV,
     ND_ADDR,
@@ -80,6 +85,7 @@ struct Node {
 
     Node *body;
     Node *next;
+    Type *ty;
     Token *tok;
 
     char *funcname;
@@ -113,21 +119,40 @@ struct Function
 };
 
 Function *program(void);
-void codegen();
+void codegen(Function *prog);
 Function *function(void);
 
-Node *expr();
-Node *equality();
-Node *relational();
-Node *add();
-Node *mul();
-Node *unary();
-Node *primary();
-Node *assign();
-Node *stmt();
+Node *expr(void);
+Node *equality(void);
+Node *relational(void);
+Node *add(void);
+Node *mul(void);
+Node *unary(void);
+Node *primary(void);
+Node *assign(void);
+Node *stmt(void);
+Node *stmt2(void);
 
 LVar *locals;
 LVar *find_lvar(Token *tok);
+
+/* type.c */
+
+typedef enum
+{
+    TY_INT,
+    TY_PTR
+} TypeKind;
+
+struct Type
+{
+    TypeKind kind;
+    Type *base;
+};
+
+bool is_integer(Type *ty);
+Type *pointer_to(Type *base);
+void add_type(Node *node);
 
 /* codegen.c */
 void gen(Node *node);
